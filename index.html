@@ -170,6 +170,208 @@ function render(){renderCats();renderPlans();renderPills();let list=filtered();i
 document.getElementById('search').addEventListener('input',e=>{query=e.target.value.trim();render()});render();
 </script>
 <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(registration => {
+          registration.update();
+          setInterval(() => registration.update(), 30 * 60 * 1000);
+
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+
+          registration.addEventListener('updatefound', () => {
+            const worker = registration.installing;
+            if (!worker) return;
+            worker.addEventListener('statechange', () => {
+              if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                worker.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          });
+        }).catch(() => {});
+      });
+
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (sessionStorage.getItem('foodAppReloadedForUpdate') === '1') return;
+        sessionStorage.setItem('foodAppReloadedForUpdate', '1');
+        window.location.reload();
+      });
+    }
+  </script>
+</body>
+</html><!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>日常菜式与饮品灵感库</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2f7d4f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="饮食灵感库">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+:root{--ink:#202b27;--muted:#66736d;--line:#dce3dc;--paper:#fffdf8;--base:#f6f1e7;--leaf:#2f7d4f;--leaf2:#e5f1e6;--red:#c95145;--gold:#d7a943;--coffee:#6b4a35;--cream:#f3e6d0;--blue:#dce9ee;--shadow:0 18px 46px rgba(32,49,42,.12)}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;color:var(--ink);background:linear-gradient(135deg,#e8f1e7,#f7f2e7 52%,#dce9ee);letter-spacing:0}button,input{font:inherit}.app{min-height:100vh;display:grid;grid-template-columns:320px minmax(0,1fr)}.side{padding:28px 22px;border-right:1px solid rgba(32,49,42,.12);background:rgba(255,253,248,.9);position:sticky;top:0;height:100vh;overflow:auto}.brand h1{margin:0 0 8px;font-size:27px;line-height:1.15}.brand p{margin:0 0 22px;color:var(--muted);line-height:1.65;font-size:14px}.side-title{font-size:13px;font-weight:900;color:#3d594b;margin:18px 0 8px}.cat-list{display:grid;gap:8px}.cat-btn{width:100%;border:1px solid transparent;background:transparent;color:var(--ink);padding:12px;border-radius:8px;display:grid;grid-template-columns:38px 1fr auto;gap:10px;align-items:center;text-align:left;cursor:pointer}.cat-btn:hover{background:rgba(47,125,79,.08)}.cat-btn.active{background:#fff;border-color:rgba(47,125,79,.25);box-shadow:0 8px 22px rgba(32,49,42,.08)}.icon{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--leaf2);color:var(--leaf);font-weight:900}.cat-name{font-weight:900}.small{font-size:13px;color:var(--muted)}.day-box{display:grid;gap:7px}.day-chip{border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px;text-align:left;color:var(--muted);cursor:pointer}.day-chip b{display:block;color:var(--ink);margin-bottom:3px}main{padding:28px clamp(18px,4vw,56px) 46px}.hero{min-height:350px;border:1px solid rgba(32,49,42,.1);border-radius:8px;overflow:hidden;display:grid;grid-template-columns:minmax(0,.9fr) minmax(360px,1.1fr);background:#fff;box-shadow:var(--shadow)}.hero-copy{padding:clamp(24px,4vw,44px);align-self:center}.eyebrow{margin:0 0 12px;color:#1f5f3c;font-weight:900}.hero h2{margin:0;font-size:clamp(34px,5vw,58px);line-height:1.05}.hero p{margin:18px 0 0;color:var(--muted);line-height:1.75;max-width:600px}.rule-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.rule{padding:8px 10px;border-radius:999px;background:#f1f6f0;border:1px solid var(--line);font-size:13px;color:#3d594b}.hero-photo{min-height:350px;background-image:linear-gradient(90deg,rgba(0,0,0,.18),rgba(0,0,0,0)),var(--hero);background-size:cover;background-position:center}.toolbar{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:12px;margin:18px 0}.search{border:1px solid var(--line);background:#fff;border-radius:8px;padding:13px 14px;color:var(--ink);outline:none}.selects{display:flex;gap:8px;flex-wrap:wrap}.pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 12px;color:var(--muted);cursor:pointer}.pill.active{background:var(--leaf);border-color:var(--leaf);color:#fff}.layout{display:grid;grid-template-columns:minmax(0,1.38fr) minmax(320px,.62fr);gap:18px;align-items:start}.panel,.detail{background:rgba(255,253,248,.94);border:1px solid rgba(32,49,42,.1);border-radius:8px;box-shadow:0 10px 26px rgba(32,49,42,.06);padding:18px}.section-title{margin:0 0 14px;font-size:21px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{border:1px solid rgba(32,49,42,.1);border-radius:8px;background:#fff;overflow:hidden;display:grid;cursor:pointer;box-shadow:0 8px 22px rgba(32,49,42,.06)}.card.active{outline:3px solid rgba(47,125,79,.22)}.photo{height:220px;position:relative;background:#f7ead5;overflow:hidden}.label{position:absolute;left:14px;right:14px;bottom:12px;color:#202b27;text-shadow:none;background:rgba(255,253,248,.9);border:1px solid rgba(32,49,42,.1);border-radius:8px;padding:10px 12px}.label span{font-size:13px;font-weight:900;color:#2f7d4f}.label h3{margin:4px 0 0;font-size:22px;line-height:1.2;color:#202b27}.card-body{padding:14px;display:grid;gap:10px}.meta{display:flex;flex-wrap:wrap;gap:8px}.tag{white-space:nowrap;color:#1f5f3c;background:var(--leaf2);border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900}.tag.coffee{color:#5a3926;background:var(--cream)}.desc{margin:0;color:var(--muted);line-height:1.55;font-size:14px}.detail{position:sticky;top:24px;display:grid;gap:14px}.detail-photo{height:260px;border-radius:8px;position:relative;background:#f7ead5;overflow:hidden;display:grid;align-items:end;padding:14px;color:#202b27;border:1px solid rgba(32,49,42,.1)}.detail-photo h3{margin:0;font-size:24px;text-shadow:none;background:rgba(255,253,248,.9);border-radius:8px;padding:10px 12px;justify-self:start}.puzzle{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.tile{min-height:132px;border-radius:8px;position:relative;overflow:hidden;background:#fffdf8;border:1px solid var(--line);color:#202b27;padding:14px;display:grid;align-content:start;gap:6px}.tile:nth-child(1){border-top:5px solid var(--leaf)}.tile:nth-child(2){border-top:5px solid var(--gold)}.tile:nth-child(3){border-top:5px solid var(--coffee)}.tile b{font-size:30px;line-height:1;color:#2f7d4f}.tile span{font-size:16px;font-weight:900;color:#202b27;text-shadow:none}.tile em{font-style:normal;font-size:14px;opacity:1;margin-top:2px;line-height:1.45;color:#66736d}.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}.info-block{display:grid;gap:7px}.info-block b{font-size:15px}ul,ol{margin:0;padding-left:20px;color:var(--muted);line-height:1.65;font-size:14px}.empty{padding:32px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:8px;background:#fff}.note{background:#eef5ef;border-left:4px solid var(--leaf);padding:12px;border-radius:8px;color:var(--muted);line-height:1.65;font-size:14px}.coffee-note{background:#f6ead8;border-left-color:var(--coffee)}@media(max-width:1100px){.grid{grid-template-columns:1fr}.hero{grid-template-columns:1fr}.hero-photo{order:-1;min-height:260px}.layout{grid-template-columns:1fr}.detail{position:static}}@media(max-width:900px){.app{grid-template-columns:1fr}.side{position:static;height:auto;border-right:0;border-bottom:1px solid rgba(32,49,42,.12)}.cat-list{grid-template-columns:repeat(3,minmax(0,1fr))}.day-box{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){main,.side{padding:18px}.cat-list,.day-box,.toolbar,.cols{grid-template-columns:1fr}.hero h2{font-size:34px}.puzzle{grid-template-columns:1fr}.tile{min-height:94px}.photo{height:180px}}
+
+.real-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#f7ead5}.image-fallback{position:absolute;inset:0;display:none;align-content:center;justify-items:center;text-align:center;padding:18px;background:#fff7e8;color:#66736d;line-height:1.6}.image-fallback b{display:block;color:#202b27;font-size:18px;margin-bottom:6px}.image-fallback a{color:#2f7d4f;font-weight:800;text-decoration:none}.photo.image-error .image-fallback,.detail-photo.image-error .image-fallback{display:grid}.photo.image-error .real-img,.detail-photo.image-error .real-img{display:none}.photo-credit{font-size:12px;color:#7a847f;line-height:1.45}.photo-credit a{color:#2f7d4f;text-decoration:none;font-weight:800}
+
+.step-img{height:118px;border-radius:8px;position:relative;overflow:hidden;background:#f7ead5;border:1px solid var(--line);margin:-4px -4px 8px}.step-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}.step-fallback{position:absolute;inset:0;display:none;align-content:center;justify-items:center;text-align:center;padding:10px;background:#fff7e8;color:#66736d;font-size:12px;line-height:1.45}.step-fallback a{color:#2f7d4f;font-weight:900;text-decoration:none}.step-img.image-error .step-fallback{display:grid}.step-img.image-error img{display:none}.step-query{font-size:12px;color:#7a847f;line-height:1.45;margin-top:6px}.step-query a{color:#2f7d4f;text-decoration:none;font-weight:800}
+
+.video-section{display:grid;gap:12px;background:#fff8ee;border:1px solid #ead8bd;border-radius:8px;padding:14px}.video-head{display:flex;justify-content:space-between;gap:12px;align-items:end}.video-head h4{margin:0;font-size:18px}.video-head span{font-size:12px;color:#7a6a58}.video-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.video-card{display:grid;gap:7px;text-decoration:none;background:#fffdf8;border:1px solid #e4d5bf;border-radius:8px;padding:12px;color:#202b27;min-height:126px}.video-card:hover{border-color:#6b4a35;box-shadow:0 8px 22px rgba(107,74,53,.12)}.video-card b{font-size:28px;color:#6b4a35;line-height:1}.video-card span{font-weight:900}.video-card em{font-style:normal;color:#7a847f;font-size:12px;line-height:1.45}@media(max-width:680px){.video-grid{grid-template-columns:1fr}.video-head{display:grid}}
+</style>
+</head>
+<body>
+<div class="app"><aside class="side"><div class="brand"><h1>日常菜式与饮品灵感库</h1><p>67 款减脂餐、家常菜、素菜、咖啡特调和日常混合饮品放在一起。安装到手机主屏幕后，基础菜单和做法可离线打开。</p></div><div class="side-title">菜式分类</div><div class="cat-list" id="catList"></div><div class="side-title">一周随手搭配</div><div class="day-box" id="dayBox"></div></aside><main><section class="hero" id="hero"><div class="hero-copy"><p class="eyebrow" id="eyebrow">今日推荐</p><h2 id="heroTitle">想吃肉，也能吃得舒服</h2><p id="heroText">不是每天都必须吃水煮菜。把蛋白质、蔬菜、主食比例搭好，日常菜也可以更轻盈、更有胃口。</p><div class="rule-row"><span class="rule">鸡肉</span><span class="rule">牛肉</span><span class="rule">猪肉</span><span class="rule">鱼虾</span><span class="rule">咖啡特调</span></div></div><div class="hero-photo" aria-label="菜式摄影图"></div></section><section class="toolbar"><input class="search" id="search" placeholder="搜索菜名、食材，比如：鸡胸、牛肉、拿铁、猪肉"><div class="selects" id="modePills"></div></section><section class="layout"><div class="panel"><h2 class="section-title" id="listTitle">全部灵感</h2><div class="grid" id="recipeGrid"></div></div><aside class="detail" id="detail"></aside></section></main></div>
+<script>
+
+
+
+function photoQuery(name,cat,ingredients=[]){
+  const main=ingredients.slice(0,3).map(i=>String(i).replace(/\s.+$/,'')).join(' ');
+  const suffix=(cat==='coffee'||cat==='drink')?'饮品 实拍 调制 做法':'家常菜 实拍 菜谱 成品图';
+  return [name, main, suffix].filter(Boolean).join(' ');
+}
+function photoUrl(name,cat,ingredients=[]){
+  const q=encodeURIComponent(photoQuery(name,cat,ingredients));
+  return 'https://tse1.mm.bing.net/th?q='+q+'&w=900&h=650&c=7&rs=1&p=0&o=5&pid=1.7';
+}
+function searchUrl(name,cat,ingredients=[]){
+  const q=encodeURIComponent(photoQuery(name,cat,ingredients));
+  return 'https://www.bing.com/images/search?q='+q;
+}
+function stepPhotoQuery(recipe,stepName,stepText,index){
+  const base=(recipe.cat==='coffee'||recipe.cat==='drink')?'饮品 调制 步骤 实拍':'家常菜 菜谱 步骤 实拍';
+  return [recipe.name, stepName, stepText, base].join(' ');
+}
+function stepPhotoUrl(recipe,stepName,stepText,index){
+  return 'https://tse1.mm.bing.net/th?q='+encodeURIComponent(stepPhotoQuery(recipe,stepName,stepText,index))+'&w=520&h=360&c=7&rs=1&p=0&o=5&pid=1.7';
+}
+function stepSearchUrl(recipe,stepName,stepText,index){
+  return 'https://www.bing.com/images/search?q='+encodeURIComponent(stepPhotoQuery(recipe,stepName,stepText,index));
+}
+function videoQuery(recipe,topic){
+  const base=(recipe.cat==='coffee'||recipe.cat==='drink')?'短视频 教程 饮品 调制 做法':'短视频 教程 家常菜 做法';
+  const ing=recipe.ingredients.slice(0,4).map(i=>String(i).replace(/\s.+$/,'')).join(' ');
+  return [recipe.name, topic, ing, base].join(' ');
+}
+function videoSearchUrl(recipe,topic){
+  return 'https://www.bing.com/videos/search?q='+encodeURIComponent(videoQuery(recipe,topic));
+}
+function coffeeVideoSection(recipe){
+  if(recipe.cat!=='coffee'&&recipe.cat!=='drink') return '';
+  const topics=['完整制作流程','分层与倒入手法','同款变化和装饰'];
+  return '<section class="video-section"><div class="video-head"><h4>短视频教学</h4><span>按饮品名和材料实时匹配</span></div><div class="video-grid">'+topics.map((topic,i)=>{var url=videoSearchUrl(recipe,topic);return '<a class="video-card" href="'+url+'" target="_blank"><b>0'+(i+1)+'</b><span>'+topic+'</span><em>'+videoQuery(recipe,topic)+'</em></a>'}).join('')+'</div><p class="photo-credit">视频入口会打开对应短视频搜索结果，优先看 30 秒到 2 分钟、能展示杯中倒入过程的视频。</p></section>';
+}
+function detailedStep(recipe,stepName,stepText,index){
+  const ing=recipe.ingredients.map(i=>String(i).replace(/\s.+$/,'')).slice(0,4).join('、');
+  const prefix=['先把节奏稳住：','这一步决定口感：','最后做收口：'][index]||'继续处理：';
+  const coffee=(recipe.cat||recipe.cat==='drink');
+  if(coffee){
+    const notes=[
+      '杯子和冰块先准备好，液体按材料顺序加入，分层会更明显。',
+      '倒入咖啡或奶基底时放慢速度，沿杯壁倒，味道更干净。',
+      '完成后先闻香气，再轻轻搅拌 2 到 3 圈，避免过度稀释。'
+    ];
+    return prefix+stepText+' '+notes[index%notes.length];
+  }
+  const notes=[
+    '食材提前洗净、切到大小接近，后面下锅才会熟得均匀；本菜核心食材是 '+ing+'。',
+    '下锅后先用中大火建立香气，再根据食材状态转中火，避免外面过老里面不熟。',
+    '出锅前尝一下咸淡，汁水不要收得太干，装盘后口感会更稳定。'
+  ];
+  return prefix+stepText+' '+notes[index%notes.length];
+}
+function dishImg(name,cat,ingredients,visuals){
+  return photoUrl(name,cat,ingredients);
+}
+
+const imgs={};
+const cats=[['all','全部','67 款'],['chicken','鸡肉','10 款'],['beef','牛肉','9 款'],['pork','猪肉','9 款'],['fish','鱼虾','9 款'],['veg','素菜','10 款'],['coffee','咖啡','10 款'],['drink','饮品','10 款']];
+function recipe(cat,type,name,time,tags,desc,ingredients,steps,visuals,img){return{cat,type,name,time,tags,desc,ingredients,steps,visuals,img:img||dishImg(name,cat,ingredients,visuals)}}
+const recipes=[
+recipe('chicken','鸡肉','葱油鸡腿饭','28 分钟',['家常','高蛋白'],'鸡腿去皮后依然嫩，葱油少量提香，适合工作日午餐。',['去皮鸡腿 1 只','米饭 100g','小葱 3 根','姜片 3 片','生菜 150g','生抽 1 勺'],['鸡腿冷水下锅，加姜片煮熟。','小葱用少量油煎香，混合生抽做葱油汁。','鸡腿切块，配米饭和生菜，淋少量葱油汁。'],['煮鸡腿','做葱油','切块装盘']),
+recipe('chicken','鸡肉','宫保鸡丁轻油版','22 分钟',['解馋','带饭'],'保留酸甜辣香，减少油和花生量，日常吃也不沉重。',['鸡胸 160g','黄瓜 80g','胡萝卜 60g','花生 8g','干辣椒 2 个','醋 1 勺'],['鸡胸切丁，用生抽和淀粉抓匀。','胡萝卜、黄瓜切丁，大火快炒。','下鸡丁和调好的宫保汁，最后撒花生。'],['切丁腌制','蔬菜快炒','挂汁收锅']),
+recipe('chicken','鸡肉','香菇滑鸡蒸碗','25 分钟',['少油','下饭'],'蒸出来的鸡肉更嫩，香菇提供鲜味，不需要重油。',['鸡腿肉 180g','干香菇 4 朵','姜丝','小葱','生抽 1 勺','玉米淀粉 1 小勺'],['鸡肉切块，香菇泡发切片。','鸡肉加姜丝、生抽、淀粉抓匀。','铺香菇后蒸 15 分钟，撒葱花。'],['泡香菇','抓鸡肉','上锅蒸']),
+recipe('chicken','鸡肉','泰式柠檬鸡丝','18 分钟',['清爽','低脂'],'酸辣开胃，适合没胃口但又想吃肉的时候。',['鸡胸 150g','黄瓜 1 根','香菜','柠檬 半个','小米辣','鱼露或生抽'],['鸡胸煮熟撕丝。','黄瓜切丝，香菜切段。','用柠檬汁、生抽、小米辣拌匀。'],['煮熟撕丝','切配菜','酸辣拌匀']),
+recipe('chicken','鸡肉','照烧鸡肉生菜包','20 分钟',['轻食','有满足感'],'甜咸照烧感，但用生菜包着吃，口感轻。',['鸡腿肉 160g','生菜 6 片','洋葱 50g','生抽','蜂蜜 5g','芝麻'],['鸡腿肉切小块煎香。','加入洋葱和照烧汁翻炒。','用生菜叶包鸡肉，撒芝麻。'],['煎鸡肉','照烧收汁','生菜包']),
+recipe('chicken','鸡肉','鸡胸番茄豆腐锅','18 分钟',['暖胃','控脂'],'番茄汤底能提升满足感，豆腐让蛋白更稳。',['鸡胸 120g','番茄 2 个','嫩豆腐 150g','娃娃菜 150g','黑胡椒'],['番茄炒软加水煮开。','下豆腐和娃娃菜煮 5 分钟。','放鸡胸薄片，变白后调味。'],['炒番茄','煮豆腐菜','下鸡片']),
+recipe('beef','牛肉','黑椒牛肉彩椒饭','20 分钟',['补铁','便当'],'牛肉和彩椒是稳定组合，适合想吃扎实一点的午餐。',['瘦牛肉 150g','彩椒 150g','洋葱 50g','杂粮饭 100g','黑胡椒'],['牛肉逆纹切片，生抽和黑胡椒腌制。','洋葱和彩椒大火炒香。','下牛肉快速翻炒，配杂粮饭。'],['牛肉切片','彩椒爆香','快炒出锅']),
+recipe('beef','牛肉','番茄牛腩蔬菜锅','35 分钟',['周末','满足'],'用熟牛腩会更快，番茄和卷心菜让汤底浓但不腻。',['熟牛腩 150g','番茄 2 个','卷心菜 150g','土豆 80g','洋葱 50g'],['番茄和洋葱炒软。','加入牛腩、土豆和水炖煮。','最后放卷心菜，少盐调味。'],['炒番茄','牛腩炖煮','下卷心菜']),
+recipe('beef','牛肉','水煮牛肉清爽版','24 分钟',['轻辣','高蛋白'],'用大量豆芽和青菜垫底，油泼香气保留但油量控制。',['牛肉片 160g','豆芽 150g','油麦菜 150g','郫县豆瓣 8g','蒜末','花椒'],['青菜和豆芽焯熟铺碗底。','牛肉片抓淀粉后烫熟。','少油炒香豆瓣和蒜末，浇在牛肉上。'],['焯蔬菜','烫牛肉','少油浇香']),
+recipe('beef','牛肉','芹菜牛肉末','18 分钟',['家常','下饭'],'芹菜脆、牛肉香，配少量主食很适合晚餐。',['牛肉末 120g','芹菜 220g','蒜末','小米辣','生抽'],['芹菜切小段。','牛肉末炒散出香。','加入芹菜大火翻炒，少量生抽调味。'],['切芹菜','炒牛肉','合炒断生']),
+recipe('beef','牛肉','孜然牛肉生菜卷','20 分钟',['香口','低碳'],'烧烤风味但用生菜卷着吃，适合想解馋的时候。',['牛肉片 150g','生菜 8 片','洋葱 60g','孜然粉','辣椒粉','酸奶酱'],['牛肉和洋葱大火炒香。','加孜然粉和辣椒粉调味。','用生菜包牛肉，可蘸少量酸奶酱。'],['炒牛肉','撒孜然','生菜卷']),
+recipe('pork','猪肉','青椒瘦肉丝','18 分钟',['家常','快手'],'经典下饭菜，用瘦肉和少油快炒，日常感很强。',['猪里脊 150g','青椒 2 个','蒜末','生抽','淀粉 1 小勺'],['里脊切丝，用生抽和淀粉抓匀。','青椒切丝，大火炒到断生。','下肉丝快炒，出锅前加蒜末。'],['切丝腌肉','青椒断生','肉丝快炒']),
+recipe('pork','猪肉','冬瓜肉丸汤','25 分钟',['清淡','暖胃'],'猪肉也可以很清爽，做成小丸子配冬瓜刚刚好。',['瘦猪肉末 160g','冬瓜 250g','姜末','蛋清 半个','小葱','白胡椒'],['肉末加姜末、蛋清、白胡椒搅打。','冬瓜切片煮到半透明。','挤入肉丸煮熟，撒葱花。'],['搅肉馅','煮冬瓜','下肉丸']),
+recipe('pork','猪肉','蒜泥白肉轻量版','20 分钟',['冷盘','解馋'],'用薄切瘦五花或梅花肉，搭黄瓜减少油腻感。',['瘦五花 120g','黄瓜 1 根','蒜泥','生抽','醋','辣椒油 少许'],['猪肉煮熟放凉切薄片。','黄瓜刨成长片铺底。','调蒜泥汁，少量淋在肉片上。'],['煮肉放凉','黄瓜铺底','蒜汁淋面']),
+recipe('pork','猪肉','莲藕猪肉蒸饼','28 分钟',['蒸菜','便当'],'莲藕增加脆感和纤维，蒸菜省油。',['瘦猪肉末 150g','莲藕 120g','鸡蛋 1 个','葱姜水','生抽'],['莲藕切碎。','肉末加莲藕、蛋液和葱姜水搅匀。','压成薄饼蒸 15 分钟。'],['莲藕切碎','肉馅搅匀','压饼蒸']),
+recipe('pork','猪肉','木耳莴笋炒肉片','18 分钟',['清脆','家常'],'莴笋和木耳体积大、口感好，肉片只做提香。',['猪里脊 120g','莴笋 220g','木耳 80g','蒜片','生抽'],['肉片抓少量淀粉。','莴笋切片，木耳焯水。','肉片滑熟后合炒莴笋木耳。'],['肉片上浆','木耳焯水','合炒出锅']),
+recipe('fish','鱼虾','清蒸鲈鱼','18 分钟',['经典','低脂'],'家常鱼菜里的稳定答案，少油但很鲜。',['鲈鱼 1 条','姜丝','葱丝','蒸鱼豉油','热油 少许'],['鱼身划刀，铺姜丝。','水开后蒸 8 到 10 分钟。','倒掉蒸水，放葱丝和少量热油豉油。'],['处理鱼','上锅蒸','葱丝淋汁']),
+recipe('fish','鱼虾','番茄龙利鱼锅','18 分钟',['低脂','酸甜'],'番茄汤底很友好，新手也不容易翻车。',['龙利鱼 180g','番茄 2 个','金针菇 100g','娃娃菜 150g','葱花'],['番茄炒软加水煮开。','放金针菇和娃娃菜。','最后下鱼片，变白即可。'],['番茄出汁','下蔬菜','鱼片收尾']),
+recipe('fish','鱼虾','蒜蓉虾仁西兰花','16 分钟',['快手','高蛋白'],'虾仁和西兰花是懒人减脂组合，但蒜香会让它不无聊。',['虾仁 160g','西兰花 220g','蒜末','黑胡椒','生抽 半勺'],['西兰花焯水。','虾仁用黑胡椒抓匀。','蒜末炒香后下虾仁和西兰花翻炒。'],['焯西兰花','虾仁调味','蒜香合炒']),
+recipe('fish','鱼虾','香煎三文鱼藜麦沙拉','24 分钟',['优脂','周末'],'适合周末做得漂亮一点，脂肪来自鱼本身，主食用藜麦。',['三文鱼 150g','藜麦 60g','生菜 120g','牛油果 40g','柠檬汁'],['三文鱼用盐和黑胡椒调味。','两面煎熟，藜麦煮熟。','与生菜、牛油果和柠檬汁装盘。'],['鱼排调味','两面香煎','沙拉装盘']),
+recipe('fish','鱼虾','虾滑冬瓜汤','20 分钟',['清甜','晚餐'],'清淡但有鲜味，适合晚上不想吃太重。',['虾滑 140g','冬瓜 250g','小白菜 120g','姜片','白胡椒'],['冬瓜和姜片煮到半透明。','挤入虾滑煮熟。','下小白菜，白胡椒调味。'],['冬瓜煮透','虾滑成丸','青菜关火']),
+recipe('veg','素菜','香菇青菜豆腐煲','16 分钟',['素菜','低油'],'豆腐提供蛋白，香菇木耳出鲜，晚上吃很舒服。',['北豆腐 180g','香菇 100g','上海青 200g','木耳 60g','蚝油 半勺'],['豆腐切块煎到微黄。','香菇和木耳加水煮出鲜味。','放豆腐和上海青，少量蚝油收味。'],['豆腐微煎','菌菇出鲜','青菜收味']),
+recipe('veg','素菜','番茄鸡蛋燕麦粥','12 分钟',['早餐','高纤维'],'早餐不想纠结时很稳，有蛋白也有热乎感。',['燕麦 40g','鸡蛋 1 个','番茄 1 个','菠菜 1 把','白胡椒'],['番茄切块炒出汁。','加水和燕麦煮到浓稠。','打入蛋液，放菠菜和白胡椒。'],['番茄炒汁','燕麦煮稠','蛋液收尾']),
+recipe('veg','素菜','凉拌荞麦面','15 分钟',['清爽','快手'],'适合夏天或没胃口时，芝麻酱少量就够香。',['荞麦面 70g','黄瓜 1 根','豆芽 100g','胡萝卜 60g','芝麻酱 8g'],['荞麦面煮熟过凉。','黄瓜胡萝卜切丝，豆芽焯水。','芝麻酱加水调稀后拌匀。'],['煮面过凉','切丝焯菜','调酱拌面']),
+recipe('veg','素菜','蒜蓉油麦菜','8 分钟',['快手','家常'],'最简单的绿叶菜，适合给任何肉菜做搭配。',['油麦菜 250g','蒜 3 瓣','生抽 半勺','盐 少许'],['油麦菜洗净切段。','蒜末少油炒香。','下油麦菜大火快炒，少盐调味。'],['洗切','蒜香','快炒']),
+recipe('veg','素菜','南瓜小米粥配水煮蛋','18 分钟',['早餐','温暖'],'软糯、舒服，适合早晨或运动后恢复。',['小米 35g','南瓜 120g','鸡蛋 1 个','枸杞 少许'],['小米和南瓜煮到软糯。','鸡蛋煮熟切半。','粥里放少量枸杞。'],['切南瓜','煮小米','鸡蛋装碗']),
+recipe('coffee','咖啡','橙香美式','5 分钟',['冰咖啡','清爽'],'橙汁的酸甜和美式很搭，下午喝很提神。',['浓缩咖啡 1 份','冰块 180g','鲜榨橙汁 80ml','气泡水 80ml','橙片 1 片'],['杯中加冰和橙汁。','倒入气泡水。','最后沿杯壁倒入浓缩咖啡。'],['橙汁打底','加入气泡水','咖啡分层']),
+recipe('coffee','咖啡','椰乳拿铁','4 分钟',['拿铁','顺滑'],'椰乳自带香气，少糖也好喝。',['浓缩咖啡 1 份','无糖椰乳 180ml','冰块 160g','肉桂粉 少许'],['杯中加入冰块和椰乳。','倒入浓缩咖啡。','撒少量肉桂粉。'],['椰乳加冰','倒咖啡','肉桂收尾']),
+recipe('coffee','咖啡','燕麦奶桂花拿铁','6 分钟',['热饮','香气'],'桂花香让热拿铁更像甜品，但不用加太多糖。',['浓缩咖啡 1 份','燕麦奶 200ml','干桂花 少许','蜂蜜 3g 可选'],['燕麦奶加热但不煮沸。','加入桂花焖 2 分钟。','倒入咖啡，可加少量蜂蜜。'],['热燕麦奶','桂花焖香','融合咖啡']),
+recipe('coffee','咖啡','黑糖海盐冷萃','3 分钟',['冷萃','微甜'],'黑糖只用一点点，海盐让甜感更立体。',['冷萃咖啡 180ml','冰块','黑糖浆 5ml','海盐 1 小撮','牛奶 40ml 可选'],['杯中加黑糖浆和海盐。','加入冰块和冷萃。','喜欢顺滑可补一点牛奶。'],['糖盐打底','倒冷萃','加奶可选']),
+recipe('coffee','咖啡','抹茶咖啡拿铁','6 分钟',['分层','特调'],'抹茶和咖啡会有茶香苦感，适合不想太甜的人。',['抹茶粉 2g','温水 30ml','浓缩咖啡 1 份','牛奶 180ml','冰块'],['抹茶粉用温水搅匀。','杯中加冰和牛奶。','倒入抹茶液，再倒咖啡。'],['调抹茶','牛奶加冰','咖啡分层']),
+recipe('coffee','咖啡','香蕉花生冰拿铁','5 分钟',['饱腹','早餐咖啡'],'像一杯轻甜早餐饮，适合早上没时间吃太多。',['浓缩咖啡 1 份','香蕉 半根','牛奶 180ml','花生酱 5g','冰块'],['香蕉、牛奶和花生酱打匀。','杯中加冰倒入香蕉奶。','最后加入浓缩咖啡。'],['打香蕉奶','冰杯倒入','咖啡收尾']),
+recipe('chicken','鸡肉','椒麻手撕鸡','20 分钟',['凉拌','解馋'],'麻香清爽，适合夏天或想吃重口但不想太油的时候。',['鸡腿 1 只','黄瓜 1 根','花椒油 1 小勺','香菜','蒜末','生抽'],['鸡腿煮熟后放凉撕成条。','黄瓜切丝，蒜末、生抽、花椒油调汁。','鸡丝和黄瓜拌匀，撒香菜。'],['煮鸡放凉','调椒麻汁','拌匀装盘']),
+recipe('chicken','鸡肉','咖喱鸡胸土豆碗','26 分钟',['浓香','便当'],'咖喱味足但油量可控，配米饭或花菜饭都合适。',['鸡胸 160g','土豆 120g','胡萝卜 80g','洋葱 60g','低脂牛奶 80ml','咖喱块 半块'],['鸡胸切块，土豆和胡萝卜切丁。','洋葱炒香后加入鸡胸和蔬菜。','加水焖熟，放咖喱和牛奶收浓。'],['切丁备料','炒香焖煮','咖喱收汁']),
+recipe('chicken','鸡肉','菌菇鸡肉丸汤','24 分钟',['清淡','高蛋白'],'鸡肉丸比整块鸡胸更嫩，菌菇让汤底自然鲜。',['鸡胸肉末 180g','鸡蛋清 半个','白玉菇 120g','娃娃菜 150g','姜末','白胡椒'],['鸡肉末加蛋清、姜末和白胡椒搅打。','菌菇加水煮出鲜味。','挤入鸡肉丸，煮熟后下娃娃菜。'],['搅打肉馅','煮菌菇汤','下丸子菜']),
+recipe('chicken','鸡肉','韩式辣酱鸡肉生菜碗','18 分钟',['轻辣','低脂'],'韩式辣酱少量就有风味，用生菜和米饭做平衡。',['鸡腿肉 160g','生菜 150g','米饭 90g','韩式辣酱 10g','洋葱 50g','芝麻'],['鸡腿肉切片，洋葱切丝。','鸡肉和洋葱炒熟，加入少量辣酱拌匀。','铺在生菜和米饭上，撒芝麻。'],['切片炒熟','辣酱拌香','装成饭碗']),
+recipe('beef','牛肉','番茄金针菇肥牛锅','16 分钟',['快手','暖胃'],'酸甜番茄汤底配肥牛，快手但满足感很强。',['肥牛卷 150g','番茄 2 个','金针菇 120g','娃娃菜 150g','葱花'],['番茄炒软，加水煮开。','加入金针菇和娃娃菜煮 4 分钟。','下肥牛卷烫熟，撒葱花。'],['炒番茄底','煮菌菇菜','肥牛烫熟']),
+recipe('beef','牛肉','杭椒牛柳','18 分钟',['家常','下饭'],'杭椒香气明显，牛肉切条快炒，适合想吃锅气时做。',['牛里脊 160g','杭椒 180g','蒜片','生抽','黑胡椒','淀粉'],['牛肉切条，用生抽、黑胡椒、淀粉抓匀。','杭椒切段，大火煸出香气。','下牛柳快速翻炒，断生即出锅。'],['牛柳上浆','杭椒煸香','快炒出锅']),
+recipe('beef','牛肉','萝卜清炖牛肉汤','50 分钟',['清炖','周末'],'适合周末煮一锅，汤清但有肉香，第二餐也好吃。',['牛腱或牛腩 250g','白萝卜 300g','姜片','葱段','白胡椒','盐'],['牛肉焯水洗净。','加姜片和葱段炖到牛肉变软。','加入萝卜煮透，盐和白胡椒调味。'],['牛肉焯水','慢炖出味','萝卜煮透']),
+recipe('beef','牛肉','牛肉滑蛋饭','18 分钟',['快手','安慰感'],'滑蛋让牛肉饭更柔和，适合不想做复杂菜的时候。',['牛肉片 130g','鸡蛋 2 个','米饭 100g','洋葱 50g','生抽','葱花'],['牛肉片用少量生抽腌 5 分钟。','洋葱炒软后下牛肉。','倒入蛋液，半凝固时盖在米饭上。'],['牛肉腌味','洋葱炒牛','滑蛋盖饭']),
+recipe('pork','猪肉','鱼香肉丝少油版','22 分钟',['家常','解馋'],'鱼香味完整，靠木耳胡萝卜增加体积，油少也下饭。',['猪里脊 150g','木耳 80g','胡萝卜 80g','青椒 1 个','蒜末','醋'],['里脊切丝上浆，配菜切丝。','少油炒散肉丝后盛出。','炒香蒜末和配菜，回锅加鱼香汁。'],['肉丝上浆','炒配菜','鱼香收汁']),
+recipe('pork','猪肉','白菜豆腐肉片锅','20 分钟',['暖胃','家常'],'白菜、豆腐和肉片一起煮，适合晚餐清爽收尾。',['猪里脊 120g','白菜 250g','北豆腐 150g','姜片','白胡椒','生抽'],['肉片抓少量淀粉。','白菜和豆腐先煮 6 分钟。','下肉片滑熟，用白胡椒调味。'],['肉片上浆','煮白菜豆腐','下肉片']),
+recipe('pork','猪肉','梅干菜蒸肉饼轻量版','28 分钟',['蒸菜','便当'],'梅干菜提味，不需要很多肥肉也很香。',['瘦猪肉末 160g','梅干菜 25g','鸡蛋 半个','葱姜水','生抽'],['梅干菜泡软洗净切碎。','肉末加梅干菜、蛋液和葱姜水搅匀。','铺平上锅蒸 15 到 18 分钟。'],['泡梅干菜','搅肉馅','蒸肉饼']),
+recipe('pork','猪肉','芦笋瘦肉卷','20 分钟',['清爽','高蛋白'],'用瘦肉片包芦笋，口感比普通炒肉更有变化。',['猪里脊薄片 150g','芦笋 180g','黑胡椒','生抽','蒜末'],['芦笋焯水 30 秒。','肉片包住芦笋，用黑胡椒调味。','平底锅少油煎熟，淋少量生抽。'],['芦笋焯水','肉片包卷','煎熟调味']),
+recipe('fish','鱼虾','酸菜鱼片轻油版','24 分钟',['酸辣','开胃'],'用鱼片和大量蔬菜做底，酸菜量控制，汤鲜不油。',['黑鱼片 180g','酸菜 80g','豆芽 150g','金针菇 100g','姜蒜','白胡椒'],['鱼片用白胡椒和淀粉抓匀。','酸菜和姜蒜炒香，加水煮开。','下蔬菜和鱼片，鱼片变白即可。'],['鱼片上浆','酸菜煮汤','下菜下鱼']),
+recipe('fish','鱼虾','葱姜蛤蜊蒸蛋','16 分钟',['鲜嫩','低脂'],'蒸蛋里加蛤蜊，鲜味更足，适合晚餐或早餐。',['鸡蛋 2 个','蛤蜊 150g','姜丝','葱花','温水','生抽 少许'],['蛤蜊吐沙后焯到开口。','蛋液加温水打匀过滤。','放蛤蜊蒸 10 分钟，撒葱花。'],['处理蛤蜊','调蛋液','上锅蒸']),
+recipe('fish','鱼虾','椒盐空气炸虾','14 分钟',['快手','香口'],'不用油锅也能有椒盐香，适合想吃小海鲜的时候。',['鲜虾 200g','椒盐','黑胡椒','柠檬汁','蒜粉 可选'],['鲜虾剪须开背，擦干水分。','用椒盐、黑胡椒和柠檬汁抓匀。','空气炸锅 180 度 8 到 10 分钟。'],['处理鲜虾','调味抓匀','空气炸熟']),
+recipe('fish','鱼虾','豆豉蒸龙利鱼','18 分钟',['蒸菜','下饭'],'豆豉咸鲜，鱼肉嫩，配一份青菜就是一餐。',['龙利鱼 180g','豆豉 8g','姜丝','葱花','蒸鱼豉油 半勺'],['龙利鱼擦干切块。','铺姜丝和豆豉。','水开蒸 8 分钟，撒葱花和少量豉油。'],['鱼块擦干','豆豉铺面','蒸熟调味']),
+recipe('veg','素菜','地三鲜少油版','22 分钟',['家常','素菜'],'先煎后焖，减少油量但保留土豆茄子青椒的香气。',['土豆 150g','茄子 180g','青椒 1 个','蒜末','生抽','淀粉水'],['土豆和茄子切块，少油煎到表面微黄。','加入青椒和蒜末炒香。','倒入调味汁和少量水焖到入味。'],['煎土豆茄子','青椒蒜香','焖汁入味']),
+recipe('veg','素菜','西兰花炒口蘑','12 分钟',['快手','低脂'],'清爽但有菌菇鲜味，适合搭配任何主菜。',['西兰花 220g','口蘑 120g','蒜片','黑胡椒','盐'],['西兰花掰小朵焯水。','口蘑切片煎出水汽。','加入西兰花和蒜片快炒调味。'],['焯西兰花','煎口蘑','合炒调味']),
+recipe('veg','素菜','麻酱菠菜豆皮卷','12 分钟',['凉菜','高纤维'],'菠菜和豆皮卷起来吃，更像一道完整小菜。',['菠菜 200g','豆皮 1 张','芝麻酱 8g','生抽','醋','蒜末'],['菠菜焯水挤干。','豆皮焯软后铺平，卷入菠菜。','切段后淋稀释麻酱汁。'],['焯菠菜','豆皮卷起','麻酱淋汁']),
+recipe('veg','素菜','番茄金针菇豆腐汤','15 分钟',['暖胃','素菜'],'酸甜清淡，适合晚上想喝汤又不想太重。',['番茄 2 个','金针菇 120g','嫩豆腐 150g','小白菜 100g','白胡椒'],['番茄炒软出汁。','加水后放金针菇和豆腐。','最后下小白菜，白胡椒调味。'],['番茄出汁','煮菇豆腐','青菜收尾']),
+recipe('veg','素菜','香煎杏鲍菇黑椒碗','15 分钟',['香口','素菜'],'杏鲍菇煎到边缘焦香，有接近肉感的满足度。',['杏鲍菇 220g','黑胡椒','生抽','生菜 100g','糙米饭 80g'],['杏鲍菇切厚片划花刀。','平底锅少油煎到两面金黄。','加黑胡椒和生抽，配生菜糙米饭。'],['切片划刀','煎到金黄','黑椒装碗']),
+recipe('coffee','咖啡','生椰斑斓拿铁','5 分钟',['拿铁','东南亚风'],'斑斓香和椰乳很搭，适合想喝甜品感咖啡的时候。',['浓缩咖啡 1 份','无糖椰乳 170ml','斑斓糖浆 8ml','冰块','椰子片 可选'],['杯中加入冰块、斑斓糖浆和椰乳。','沿杯壁倒入浓缩咖啡。','轻搅 2 圈，放椰子片点缀。'],['椰乳打底','倒入咖啡','轻搅完成']),
+recipe('coffee','咖啡','海盐芝士冰美式','6 分钟',['冰咖啡','奶盖'],'美式上加轻芝士奶盖，咸香能提升咖啡层次。',['冷美式 180ml','淡奶油 30ml','牛奶 30ml','海盐 少许','代糖 可选'],['淡奶油、牛奶和海盐打到微稠。','杯中加冰和冷美式。','把海盐奶盖缓慢倒在表面。'],['打奶盖','美式加冰','奶盖封顶']),
+recipe('coffee','咖啡','柚子气泡冷萃','4 分钟',['清爽','气泡'],'柚子香气明亮，适合午后不想喝奶咖时。',['冷萃咖啡 150ml','柚子茶 10g','气泡水 100ml','冰块','柚子皮 少许'],['杯底放柚子茶和冰块。','加入气泡水。','最后倒入冷萃咖啡。'],['柚子打底','气泡注入','冷萃分层']),
+recipe('coffee','咖啡','提拉米苏风味拿铁','7 分钟',['甜品感','热饮'],'用可可和奶泡做甜品感，但糖量可以自己控制。',['浓缩咖啡 1 份','牛奶 200ml','可可粉 2g','马斯卡彭风味糖浆 6ml 可选','奶泡'],['牛奶加热打奶泡。','杯中加入咖啡和少量风味糖浆。','倒入奶泡，表面筛可可粉。'],['打热奶泡','融合咖啡','筛可可粉']),
+recipe('drink','饮品','百香果柠檬气泡饮','4 分钟',['气泡','清爽'],'酸甜开胃，适合下午想喝点有味道但不想太甜的时候。',['百香果 1 个','柠檬 2 片','气泡水 220ml','冰块','蜂蜜 5g 可选'],['杯中放百香果肉和柠檬片。','加入冰块和气泡水。','按口味加少量蜂蜜，轻轻搅匀。'],['果肉打底','倒气泡水','轻搅完成']),
+recipe('drink','饮品','黄瓜薄荷青柠水','5 分钟',['无糖','清爽'],'很适合日常代替甜饮，清凉但没有负担。',['黄瓜 半根','青柠 半个','薄荷 6 片','冷水 300ml','冰块'],['黄瓜切薄片，青柠切片。','杯中放黄瓜、青柠和薄荷轻压。','加入冰块和冷水，静置 3 分钟。'],['切片备料','轻压出香','加水静置']),
+recipe('drink','饮品','草莓酸奶昔','5 分钟',['奶昔','饱腹'],'像甜品但更轻，适合早餐或运动后。',['草莓 120g','无糖酸奶 180g','牛奶 80ml','冰块','奇亚籽 5g 可选'],['草莓洗净去蒂。','草莓、酸奶、牛奶和冰块放入料理机。','打到顺滑，倒杯后撒奇亚籽。'],['处理草莓','搅打顺滑','倒杯点缀']),
+recipe('drink','饮品','芒果椰乳冰沙','6 分钟',['冰沙','热带风'],'芒果和椰乳自然甜，控制椰乳量就不会太腻。',['芒果 150g','无糖椰乳 160ml','冰块 120g','青柠汁 少许','椰子片 可选'],['芒果切块冷藏。','芒果、椰乳、冰块和青柠汁搅打。','倒入杯中，撒椰子片。'],['芒果切块','搅打冰沙','椰片收尾']),
+recipe('drink','饮品','西柚乌龙冷泡','4 分钟',['茶饮','微苦清爽'],'西柚微苦配乌龙茶，适合不想喝奶类饮品的时候。',['冷泡乌龙茶 220ml','西柚 半个','冰块','迷迭香 可选','蜂蜜 3g 可选'],['西柚取果肉，留一片装饰。','杯中加冰和西柚果肉。','倒入冷泡乌龙茶，轻搅。'],['处理西柚','冰杯铺底','倒入乌龙']),
+recipe('drink','饮品','苹果肉桂热饮','10 分钟',['热饮','无咖啡因'],'秋冬很舒服的热饮，肉桂香明显但不需要很多糖。',['苹果 半个','肉桂棒 1 根','红茶或清水 250ml','柠檬汁 少许','蜂蜜 5g 可选'],['苹果切薄片。','红茶或清水加苹果和肉桂小火煮 8 分钟。','关火后加柠檬汁，按口味加蜂蜜。'],['苹果切片','小火煮香','关火调味']),
+recipe('drink','饮品','蓝莓香蕉燕麦奶','5 分钟',['早餐饮','饱腹'],'适合没时间吃早餐时喝，口感厚一点。',['蓝莓 80g','香蕉 半根','燕麦奶 220ml','燕麦 15g','冰块'],['香蕉切段，蓝莓洗净。','所有材料放入料理机。','搅打到顺滑，静置 1 分钟更浓稠。'],['水果处理','加入燕麦奶','搅打浓稠']),
+recipe('drink','饮品','姜汁红枣暖饮','12 分钟',['热饮','暖身'],'不含咖啡因，适合晚上想喝热饮的时候。',['红枣 4 颗','姜片 3 片','枸杞 少许','热水 300ml','红糖 3g 可选'],['红枣剪开，姜切片。','加水小火煮 10 分钟。','放枸杞，按口味加少量红糖。'],['红枣剪开','小火煮姜','枸杞收尾']),
+recipe('drink','饮品','荔枝玫瑰气泡茶','5 分钟',['花果茶','气泡'],'花香和荔枝甜感明显，适合做周末饮品。',['荔枝 4 颗','玫瑰花茶 150ml','气泡水 100ml','冰块','柠檬 1 片'],['玫瑰花茶提前泡好放凉。','杯中放荔枝果肉和冰块。','倒入玫瑰茶和气泡水。'],['泡玫瑰茶','荔枝冰杯','倒入气泡']),
+recipe('drink','饮品','抹茶椰子水','5 分钟',['清爽','低脂'],'比抹茶拿铁更轻，椰子水带自然甜味。',['抹茶粉 2g','温水 30ml','椰子水 220ml','冰块','青柠皮 少许'],['抹茶粉用温水搅匀。','杯中加冰和椰子水。','倒入抹茶液，刨一点青柠皮。'],['调开抹茶','椰子水加冰','倒入分层'])
+];
+const plans=[['周一','葱油鸡腿饭 + 蒜蓉油麦菜'],['周二','黑椒牛肉彩椒饭 + 橙香美式'],['周三','香菇滑鸡蒸碗 + 椰乳拿铁'],['周四','青椒瘦肉丝 + 凉拌荞麦面'],['周五','水煮牛肉清爽版 + 黑糖海盐冷萃'],['周六','香煎三文鱼藜麦沙拉 + 燕麦奶桂花拿铁'],['周日','番茄牛腩蔬菜锅 + 抹茶咖啡拿铁']];
+let activeCat='all', activeMode='all', query='', selected=recipes[0];
+function catLabel(cat){return (cats.find(c=>c[0]===cat)||[])[1]||cat}
+function filtered(){return recipes.filter(x=>(activeCat==='all'||x.cat===activeCat)&&(activeMode==='all'||x.tags.includes(activeMode)||x.type===activeMode)&&(!query||[x.name,x.type,x.desc,x.ingredients.join(''),x.tags.join('')].join('').includes(query)))}
+function renderCats(){document.getElementById('catList').innerHTML=cats.map(c=>'<button class="cat-btn '+(activeCat===c[0]?'active':'')+'" data-cat="'+c[0]+'"><span class="icon">'+c[1].slice(0,1)+'</span><span><span class="cat-name">'+c[1]+'</span><br><span class="small">'+(c[0]==='all'?'67 款 · 鸡牛猪鱼素咖啡饮品':c[2])+'</span></span><span class="small">›</span></button>').join('')}
+function renderPlans(){document.getElementById('dayBox').innerHTML=plans.map(p=>'<button class="day-chip"><b>'+p[0]+'</b>'+p[1]+'</button>').join('')}
+function renderPills(){let modes=['all','家常','快手','便当','解馋','低脂','咖啡','饮品','热饮'];document.getElementById('modePills').innerHTML=modes.map(m=>'<button class="pill '+(activeMode===m?'active':'')+'" data-mode="'+m+'">'+(m==='all'?'全部口味':m)+'</button>').join('')}
+function card(x){var s=searchUrl(x.name,x.cat,x.ingredients);return '<article class="card '+(selected===x?'active':'')+'" data-name="'+x.name+'"><div class="photo"><img class="real-img" src="'+x.img+'" alt="'+x.name+' 实拍参考图" loading="lazy" onerror="this.closest(\'.photo\').classList.add(\'image-error\')"><div class="image-fallback"><b>实拍图未加载</b><span>可能是网络或图片服务限制</span><a href="'+s+'" target="_blank">打开实拍搜索</a></div><div class="label"><span>'+catLabel(x.cat)+' · '+x.time+'</span><h3>'+x.name+'</h3></div></div><div class="card-body"><div class="meta">'+x.tags.map(t=>'<span class="tag '+((x.cat==='coffee'||x.cat==='drink')?'coffee':'')+'">'+t+'</span>').join('')+'</div><p class="desc">'+x.desc+'</p><p class="desc">实拍匹配：'+photoQuery(x.name,x.cat,x.ingredients)+'</p></div></article>'}
+function detail(x){document.getElementById('hero').style.setProperty('--hero','url('+x.img+')');document.getElementById('eyebrow').textContent='当前推荐 · '+catLabel(x.cat);document.getElementById('heroTitle').textContent=x.name;document.getElementById('heroText').textContent=x.desc;var s=searchUrl(x.name,x.cat,x.ingredients);document.getElementById('detail').innerHTML='<div class="detail-photo"><img class="real-img" src="'+x.img+'" alt="'+x.name+' 实拍参考图" onerror="this.closest(\'.detail-photo\').classList.add(\'image-error\')"><div class="image-fallback"><b>实拍图未加载</b><span>可能是网络或图片服务限制</span><a href="'+s+'" target="_blank">打开实拍搜索</a></div><h3>'+x.name+'</h3></div><div class="meta"><span class="tag '+((x.cat==='coffee'||x.cat==='drink')?'coffee':'')+'">'+catLabel(x.cat)+'</span><span class="tag '+((x.cat==='coffee'||x.cat==='drink')?'coffee':'')+'">'+x.time+'</span>'+x.tags.map(t=>'<span class="tag '+((x.cat==='coffee'||x.cat==='drink')?'coffee':'')+'">'+t+'</span>').join('')+'</div><div class="puzzle">'+x.visuals.map((v,i)=>{var img=stepPhotoUrl(x,v,x.steps[i],i);var link=stepSearchUrl(x,v,x.steps[i],i);return '<div class="tile"><div class="step-img"><img src="'+img+'" alt="'+x.name+' '+v+' 步骤实拍图" loading="lazy" onerror="this.closest(\'.step-img\').classList.add(\'image-error\')"><div class="step-fallback"><span>步骤图未加载</span><a href="'+link+'" target="_blank">打开步骤图搜索</a></div></div><b>0'+(i+1)+'</b><span>'+v+'</span><em>'+detailedStep(x,v,x.steps[i],i)+'</em><p class="step-query">步骤图匹配：'+stepPhotoQuery(x,v,x.steps[i],i)+'。<a href="'+link+'" target="_blank">核对图片</a></p></div>'}).join('')+'</div><p class="photo-credit">实拍图按关键词匹配：'+photoQuery(x.name,x.cat,x.ingredients)+'。若图片不准或未显示，<a href="'+s+'" target="_blank">打开图片搜索核对</a>。</p>'+coffeeVideoSection(x)+'</div><div class="cols"><div class="info-block"><b>'+((x.cat==='coffee'||x.cat==='drink')?'材料与比例':'配料清单')+'</b><ul>'+x.ingredients.map(i=>'<li>'+i+'</li>').join('')+'</ul></div><div class="info-block"><b>完整做法（细化版）</b><ol>'+x.steps.map(s=>'<li>'+s+'</li>').join('')+'</ol></div></div><div class="note '+((x.cat==='coffee'||x.cat==='drink')?'coffee-note':'')+'">'+((x.cat==='coffee'||x.cat==='drink')?'饮品建议：咖啡类尽量放在下午 3 点前；无咖啡因饮品也尽量少糖，优先用鲜果、无糖茶、无糖奶或气泡水调味。':'日常建议：把它和一份绿叶菜或菌菇搭配，主食按饥饿程度控制在半碗到一碗之间。')+'</div>'}
+function render(){renderCats();renderPlans();renderPills();let list=filtered();if(!list.includes(selected))selected=list[0]||recipes[0];document.getElementById('listTitle').textContent=(activeCat==='all'?'全部灵感':catLabel(activeCat))+' · '+list.length+' 款';document.getElementById('recipeGrid').innerHTML=list.length?list.map(card).join(''):'<div class="empty">没有找到，换个关键词试试。</div>';detail(selected);document.querySelectorAll('.cat-btn').forEach(btn=>btn.onclick=()=>{activeCat=btn.dataset.cat;activeMode='all';query='';var searchEl=document.getElementById('search');if(searchEl)searchEl.value='';render()});document.querySelectorAll('.pill').forEach(btn=>btn.onclick=()=>{activeMode=btn.dataset.mode;render()});document.querySelectorAll('.card').forEach(el=>el.onclick=()=>{selected=recipes.find(x=>x.name===el.dataset.name);render();document.getElementById('detail').scrollIntoView({behavior:'smooth',block:'start'})})}
+document.getElementById('search').addEventListener('input',e=>{query=e.target.value.trim();render()});render();
+</script>
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function(){
     navigator.serviceWorker.register('./sw.js').catch(function(){});
